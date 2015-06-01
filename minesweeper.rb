@@ -2,44 +2,45 @@ require 'byebug'
 class Board
   BOARD_SIZE = 9
 
-  attr_accessor :board
+  attr_accessor :grid
 
   #Factory method to create new board filled with "bombs" number of bombs
   def self.seed(bombs)
 
-    board = Array.new(9) { Array.new(9) { Tile.new } }
+    grid = Array.new(9) { Array.new(9) { Tile.new } }
 
+    #debugger
     idx = 0
     until idx == bombs do
       row, col = rand(0...BOARD_SIZE), rand(0...BOARD_SIZE)
-      current_tile = board[row][col]
-      unless current_tile.bomb == true
+      current_tile = grid[row][col]
+      unless current_tile.bomb
         current_tile.bomb = true
         idx += 1
       end
     end
 
-    Board.new(board)
+    Board.new(grid)
 
   end
 
-  def initialize(board)
-    @board = board
+  def initialize(grid)
+    @grid = grid
   end
 
   def [](pos)
     row, col = pos[0], pos[1]
-    @board[row][col]
+    self.grid[row][col]
   end
-  
-  def []=(row,col)
+
+  def []=(pos)
 
   end
 
 
   #Displays board by showing each tile's display_value
   def display
-    self.board.map do |row|
+    self.grid.map do |row|
         row.map do |tile|
          tile.display_value
         end
@@ -61,7 +62,7 @@ class Tile
     @bomb = bomb
     @display_value = "_"
     @flagged = flagged
-    @reveled = revealed
+    @revealed = revealed
   end
 
 
