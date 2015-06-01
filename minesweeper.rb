@@ -20,7 +20,16 @@ class Board
       end
     end
 
-    Board.new(grid)
+    new_board = Board.new(grid)
+
+    new_board.grid.each_with_index do |row, idx1|
+      row.each_with_index do |tile, idx2|
+        tile.board = new_board
+        tile.pos = [idx1,idx2]
+      end
+    end
+
+    new_board
 
   end
 
@@ -45,20 +54,37 @@ end
 
 
 class Tile
+  OFFSET_POSITIONS = [
+                      [-1,-1],[0,-1],[1,-1],
+                      [-1,0],        [1,0],
+                      [-1,1],[0,1],[1,1]
+                     ]
 
-  attr_accessor :bomb, :display_value, :flagged, :revealed
+  attr_accessor :bomb, :display_value, :flagged, :revealed, :board, :pos
 
   def initialize(
                   bomb = false,
                   flagged = false,
-                  revealed = false
+                  revealed = false,
                 )
     @bomb = bomb
     @display_value = "*"
     @flagged = flagged
     @revealed = revealed
+    @board = nil
+    @neighbors = []
+    @pos = nil
   end
 
+  def neighbors
+    neighbors = []
+    OFFSET_POSITIONS.each do |x|
+      row = (x[0] + self.pos[0])
+      col = (x[1] + self.pos[1])
+      neighbors << [row, col] if row.between?(0,8) && col.between?(0,8)
+    end
+    neighbors
+  end
 
 
 end
@@ -134,9 +160,17 @@ class Game
       @board[row,col].revealed = true
       @board[row,col].display_value = "_"
     elsif input[0] == "f"
-      #flag tile at location
-      @board[row,col].flagged = true
-      @board[row,col].display_value = "f"
+      #flag tile at location if not revealed
+      unless @board[row,col].revealed == true
+        @board[row,col].flagged = true
+        @board[row,col].display_value = "f"
+      end
+
+      #unflag if already flagged
+      if @board[row,col].flagged = true
+        @board[row,col].flagged = false
+        @board[row,col].display_value = "*"
+      end
     end
   end
 
