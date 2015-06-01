@@ -1,3 +1,4 @@
+require 'byebug'
 class Board
   BOARD_SIZE = 9
 
@@ -9,7 +10,7 @@ class Board
 
   def self.seed(bombs)
 
-    board = Array.new(9) { |row| Array.new(9) { |col| Tile.new } }
+    board = Array.new(9) { Array.new(9) { Tile.new } }
 
     idx = 0
     until idx == bombs do
@@ -23,6 +24,15 @@ class Board
 
     Board.new(board)
 
+  end
+
+  def display
+    debugger
+    self.board.map do |row|
+        row.map do |tile|
+         tile.display_value
+        end
+    end
   end
 
 
@@ -45,10 +55,10 @@ end
 
 class Tile
 
-  attr_accessor :type
-  def initialize(type = nil)
+  attr_accessor :type, :display_value
+  def initialize(type = nil, display_value = "_")
     @type = type
-
+    @display_value = display_value
   end
 
 
