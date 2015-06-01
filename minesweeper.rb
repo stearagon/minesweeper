@@ -32,11 +32,6 @@ class Board
     self.grid[row][col]
   end
 
-  def []=(pos)
-
-  end
-
-
   #Displays board by showing each tile's display_value
   def display
     self.grid.map do |row|
@@ -72,6 +67,8 @@ end
 
 class Game
 
+  attr_accessor :board
+
   def initialize(board)
     @board = board
   end
@@ -85,12 +82,15 @@ class Game
     new_game = Game.new(Board.seed(gets.chomp.to_i))
 
     until new_game.over?
-      @board.display
+
+      new_game.board.display.each do |row|
+        puts row.inspect
+      end
       new_game.move
 
     end
 
-    if win?
+    if new_game.win?
       puts "You win!"
     else
       puts "You lose"
@@ -101,27 +101,42 @@ class Game
   def over?
     win? || lose?
     #user picks tile that is bomb, or user reveals all other tiles
+
   end
 
   def lose?
-    false
+    @board.grid.each do |row|
+      row.each do |tile|
+        return true if tile.bomb && tile.revealed
+      end
+    end
 
+    false
   end
 
   def win?
-    false
+    @board.grid.each do |row|
+      row.each do |tile|
+        return false if !tile.bomb && !tile.revealed
+      end
+    end
+
+    true
   end
 
   def move
     puts "Select tile with r/f and position"
     input = gets.chomp.split("")
     row, col = input[1].to_i, input[2].to_i
+
     if input[0] == "r"
       #reveal tile at specified location
-      @board[row,col].revealed == true
+      @board[row,col].revealed = true
+      @board[row,col].display_value = "_"
     elsif input[0] == "f"
       #flag tile at location
-      @board[row,col].flagged == true
+      @board[row,col].flagged = true
+      @board[row,col].display_value = "f"
     end
   end
 
