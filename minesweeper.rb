@@ -8,6 +8,7 @@ class Board
     @board = board
   end
 
+  #Factory method to create new board filled with "bombs" number of bombs
   def self.seed(bombs)
 
     board = Array.new(9) { Array.new(9) { Tile.new } }
@@ -26,6 +27,7 @@ class Board
 
   end
 
+  #Displays board by showing each tile's display_value
   def display
     debugger
     self.board.map do |row|
@@ -34,9 +36,6 @@ class Board
         end
     end
   end
-
-
-
 
 
 end
@@ -55,11 +54,19 @@ end
 
 class Tile
 
-  attr_accessor :type, :display_value
-  def initialize(type = nil, display_value = "_")
+  attr_accessor :type, :display_value, :flagged, :revealed
+  def initialize(
+                  type = nil,
+                  display_value = "_",
+                  flagged = false,
+                  revealed = false
+                )
     @type = type
     @display_value = display_value
+    @flagged = flagged
+    @reveled = revealed
   end
+
 
 
 
