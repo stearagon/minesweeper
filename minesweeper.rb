@@ -60,10 +60,11 @@ class Tile
                   revealed = false
                 )
     @bomb = bomb
-    @display_value = "_"
+    @display_value = "*"
     @flagged = flagged
     @revealed = revealed
   end
+
 
 
 end
@@ -72,6 +73,18 @@ end
 
 class Game
 
+  def play
+
+    puts "Enter number of bombs."
+
+
+    board = Board.seed(gets.chomp.to_i)
+    
+    board.display
+
+
+
+  end
 
 
 end
