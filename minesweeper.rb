@@ -1,11 +1,17 @@
 class Board
 
+  attr_accessor :board
   def initialize(board)
     @board = board
 
   end
 
-  def self.seed
+  def self.seed(bombs)
+
+    board = Array.new { [] }
+
+
+    Board.new(board)
 
   end
 
