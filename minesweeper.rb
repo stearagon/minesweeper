@@ -26,6 +26,7 @@ class Board
       row.each_with_index do |tile, idx2|
         tile.board = new_board
         tile.pos = [idx1,idx2]
+        tile.bomb_neighbors = tile.bomb_check
       end
     end
 
@@ -60,12 +61,13 @@ class Tile
                       [-1,1],[0,1],[1,1]
                      ]
 
-  attr_accessor :bomb, :display_value, :flagged, :revealed, :board, :pos
+  attr_accessor :bomb, :display_value, :flagged, :revealed,
+                :board, :pos, :neighbors, :bomb_neighbors
 
   def initialize(
                   bomb = false,
                   flagged = false,
-                  revealed = false,
+                  revealed = false
                 )
     @bomb = bomb
     @display_value = "*"
@@ -74,6 +76,7 @@ class Tile
     @board = nil
     @neighbors = []
     @pos = nil
+    @bomb_neighbors = nil
   end
 
   def neighbors
@@ -83,8 +86,47 @@ class Tile
       col = (x[1] + self.pos[1])
       neighbors << [row, col] if row.between?(0,8) && col.between?(0,8)
     end
+
     neighbors
   end
+
+  def reveal
+
+    if self.bomb
+      self.revealed = true
+      return []
+    end
+    self.revealed = true unless self.flagged
+
+    if bomb_neighbors == 0
+      display_value = "_"
+    else
+      display_value = bomb_neighbors.to_s
+      revealed == true
+    end
+
+
+    queue = neighbors.dup
+    until queue.empty?
+      pos = queue.shift[0]
+      current_neighbor = @board[pos[0], pos[1]]
+      next if current_neighbor.flagged || current_neighbor.revealed
+      current_neighbor.reveal
+    end
+
+
+  end
+
+  def bomb_check
+    count = 0
+    neighbors.each do |pos|
+      current_neighbor = board[pos[0], pos[1]]
+      count += 1 if current_neighbor.bomb
+    end
+    count
+  end
+
+
 
 
 end
@@ -157,8 +199,7 @@ class Game
 
     if input[0] == "r"
       #reveal tile at specified location
-      @board[row,col].revealed = true
-      @board[row,col].display_value = "_"
+      @board[row,col].reveal
     elsif input[0] == "f"
       #flag tile at location if not revealed
       unless @board[row,col].revealed == true
