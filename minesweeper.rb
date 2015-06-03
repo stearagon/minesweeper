@@ -1,220 +1,243 @@
 require 'byebug'
-class Board
-  BOARD_SIZE = 9
-
-  attr_accessor :grid
-
-  #Factory method to create new board filled with "bombs" number of bombs
-  def self.seed(bombs)
-
-    grid = Array.new(9) { Array.new(9) { Tile.new } }
-
-    #debugger
-    idx = 0
-    until idx == bombs do
-      row, col = rand(0...BOARD_SIZE), rand(0...BOARD_SIZE)
-      current_tile = grid[row][col]
-      unless current_tile.bomb
-        current_tile.bomb = true
-        idx += 1
-      end
-    end
-
-    new_board = Board.new(grid)
-
-    new_board.grid.each_with_index do |row, idx1|
-      row.each_with_index do |tile, idx2|
-        tile.board = new_board
-        tile.pos = [idx1,idx2]
-        tile.bomb_neighbors = tile.bomb_check
-      end
-    end
-
-    new_board
-
-  end
-
-  def initialize(grid)
-    @grid = grid
-  end
-
-  def [](row,col)
-    self.grid[row][col]
-  end
-
-  #Displays board by showing each tile's display_value
-  def display
-    self.grid.map do |row|
-        row.map do |tile|
-         tile.display_value
-        end
-    end
-  end
-
-end
-
-
-class Tile
-  OFFSET_POSITIONS = [
-                      [-1,-1],[0,-1],[1,-1],
-                      [-1,0],        [1,0],
-                      [-1,1],[0,1],[1,1]
-                     ]
-
-  attr_accessor :bomb, :display_value, :flagged, :revealed,
-                :board, :pos, :neighbors, :bomb_neighbors
-
-  def initialize(
-                  bomb = false,
-                  flagged = false,
-                  revealed = false
-                )
-    @bomb = bomb
-    @display_value = "*"
-    @flagged = flagged
-    @revealed = revealed
-    @board = nil
-    @neighbors = []
-    @pos = nil
-    @bomb_neighbors = nil
-  end
-
-  def neighbors
-    neighbors = []
-    OFFSET_POSITIONS.each do |x|
-      row = (x[0] + self.pos[0])
-      col = (x[1] + self.pos[1])
-      neighbors << [row, col] if row.between?(0,8) && col.between?(0,8)
-    end
-
-    neighbors
-  end
-
-  def reveal
-
-    if self.bomb
-      self.revealed = true
-      return []
-    end
-    self.revealed = true unless self.flagged
-
-    if bomb_neighbors == 0
-      display_value = "_"
-    else
-      display_value = bomb_neighbors.to_s
-      revealed == true
-    end
-
-
-    queue = neighbors.dup
-    until queue.empty?
-      pos = queue.shift[0]
-      current_neighbor = @board[pos[0], pos[1]]
-      next if current_neighbor.flagged || current_neighbor.revealed
-      current_neighbor.reveal
-    end
-
-
-  end
-
-  def bomb_check
-    count = 0
-    neighbors.each do |pos|
-      current_neighbor = board[pos[0], pos[1]]
-      count += 1 if current_neighbor.bomb
-    end
-    count
-  end
-
-
-
-
-end
-
-
 
 class Game
-
-  attr_accessor :board
-
-  def initialize(board)
-    @board = board
+  def initialize
+    @game_board = nil
   end
 
-  def self.play
-    #creates game board with input from user for number of bombs
-    puts "Enter number of bombs."
+  def play
+    puts "How big do you want grid? (i.e. put 9 for a 9x9 grid)"
+    inputs = gets.chomp.to_i
+    @game_board = Board.new(inputs)
 
+    puts "How many bombs?"
+    input = gets.chomp
+    @game_board.plant_bombs(input.to_i)
 
+    @game_board.tile_neighbors
+    @game_board.tile_bomb_count
 
-    new_game = Game.new(Board.seed(gets.chomp.to_i))
+    puts "How to play?"
+    puts "To reveal tile: r<tile row><tile col>"
+    puts "To flag tile: f<tile row><tile col>"
 
-    until new_game.over?
-
-      new_game.board.display.each do |row|
-        puts row.inspect
-      end
-      new_game.move
-
+    while !over?
+      @game_board.display
+      puts "What would you like to do? i.e. r00"
+      input = gets.chomp
+      self.move(input)
     end
 
-    if new_game.win?
+    if won?
       puts "You win!"
     else
       puts "You lose"
     end
+  end
 
+  def move(player_move)
+    if player_move[0] == "r"
+      @game_board.reveal([player_move[1].to_i,player_move[2].to_i])
+    elsif player_move[0] == "f"
+      @game_board.flag_tile([player_move[1].to_i,player_move[2].to_i])
+    end
   end
 
   def over?
-    win? || lose?
-    #user picks tile that is bomb, or user reveals all other tiles
+    won? || lose?
+  end
 
+  def won?
+    if !lose?
+      @game_board.grid.each do |row|
+        row.each do |tile|
+        return false if tile.bomb && tile.explored
+        return false if !tile.bomb && !tile.explored
+        end
+      end
+    end
+    return true
   end
 
   def lose?
-    @board.grid.each do |row|
+    @game_board.grid.each do |row|
       row.each do |tile|
-        return true if tile.bomb && tile.revealed
+        return true if tile.bomb && tile.explored
+      end
+    end
+    return false
+  end
+
+end
+
+class Board
+  attr_accessor :grid
+
+  def initialize(grid_size)
+    @grid = Array.new(grid_size) { |x| Array.new(grid_size) { |y| Tile.new(self, [x,y])}}
+  end
+
+  def plant_bombs(num_of_bombs)
+    i = 0
+    until i == num_of_bombs
+      pos_x, pos_y = rand(0..self.grid.size-1), rand(0..self.grid.size-1)
+      current_tile = self.grid[pos_x][pos_y]
+      if current_tile.bomb == false
+        current_tile.bomb = true
+        i+=1
+      end
+    end
+    nil
+  end
+
+  def reveal(pos)
+    return self if self.grid[pos[0]][pos[1]].flagged
+    return self if self.grid[pos[0]][pos[1]].explored
+    return self if self.grid[pos[0]][pos[1]].bomb
+
+    current_tile = self.grid[pos[0]][pos[1]]
+    current_tile.explored = true
+
+    if current_tile.neighbor_bomb_count == 0 && !current_tile.bomb
+      current_tile.neighbors.each do |neighbor_pos|
+        self.reveal(neighbor_pos)
       end
     end
 
-    false
+    self
   end
 
-  def win?
-    @board.grid.each do |row|
+  def flag_tile(pos)
+    current_tile = self.grid[pos[0]][pos[1]]
+    if current_tile.flagged
+      current_tile.flagged = false
+    else
+      current_tile.flagged = true
+    end
+  end
+
+  def display
+    visual_display = Array.new(grid.size) { |x| Array.new(grid.size) { |y| "*"}}
+
+    visual_display.each_with_index do |row, idx1|
+      row.each_with_index do |el, idx2|
+        current_tile = self.grid[idx1][idx2]
+        visual_display[idx1][idx2] = "_"  if current_tile.explored
+        visual_display[idx1][idx2] = "f" if current_tile.flagged
+        visual_display[idx1][idx2] = "*" if !current_tile.explored && !current_tile.flagged
+        visual_display[idx1][idx2] = current_tile.neighbor_bomb_count.to_s if current_tile.explored &&
+                                                                              current_tile.neighbor_bomb_count > 0
+      end
+    end
+
+    visual_display.each do |row|
+      p row
+    end
+
+    nil
+  end
+
+  def tile_neighbors
+    self.grid.each do |row|
       row.each do |tile|
-        return false if !tile.bomb && !tile.revealed
+      tile.neighbors_list
       end
     end
-
-    true
+    nil
   end
 
-  def move
-    puts "Select tile with r/f and position"
-    input = gets.chomp.split("")
-    row, col = input[1].to_i, input[2].to_i
-
-    if input[0] == "r"
-      #reveal tile at specified location
-      @board[row,col].reveal
-    elsif input[0] == "f"
-      #flag tile at location if not revealed
-      unless @board[row,col].revealed == true
-        @board[row,col].flagged = true
-        @board[row,col].display_value = "f"
-      end
-
-      #unflag if already flagged
-      if @board[row,col].flagged = true
-        @board[row,col].flagged = false
-        @board[row,col].display_value = "*"
+  def tile_bomb_count
+    self.grid.each do |row|
+      row.each do |tile|
+      tile.neighbors_bomb_count if tile.neighbor_bomb_count.nil?
       end
     end
+    nil
   end
 
 
+  def display_bombs
+    visual_display = Array.new(grid.size) { |x| Array.new(grid.size) { |y| "*"}}
+
+    visual_display.each_with_index do |row, idx1|
+      row.each_with_index do |el, idx2|
+        current_tile = self.grid[idx1][idx2]
+        visual_display[idx1][idx2] = "B" if current_tile.bomb
+      end
+    end
+
+    visual_display.each do |row|
+      p row
+    end
+
+    nil
+  end
+
+end
+
+class Tile
+  OFFSETS = [
+    [-1,-1],
+    [-1,0],
+    [-1,1],
+    [0,-1],
+    [0,1],
+    [1,-1],
+    [1,0],
+    [1,1]
+  ]
+
+  attr_accessor :bomb, :explored, :flagged, :pos, :board, :neighbor_bomb_count, :neighbors
+
+  def initialize(board,pos)
+    @pos = pos
+    @board = board
+    @bomb = false
+    @flagged = false
+    @explored = false
+    @neighbors = nil
+    @neighbor_bomb_count = nil
+  end
+
+  def neighbors_bomb_count
+    bomb_count = 0
+    @neighbors.each do |neighbor_pos|
+      bomb_count += 1 if self.board.grid[neighbor_pos[0]][neighbor_pos[1]].bomb
+    end
+    @neighbor_bomb_count = bomb_count
+  end
+
+  def neighbors_list
+    neighbors = []
+    OFFSETS.each do |x|
+      if (self.pos[0]+x[0]).between?(0,(self.board.grid.length-1)) &&
+         (self.pos[1]+x[1]).between?(0,(self.board.grid.length-1))
+         neighbors << [(self.pos[0]+x[0]),(self.pos[1]+x[1])]
+      end
+    end
+    @neighbors = neighbors
+  end
+
+  def inspect
+    { :pos => pos,
+      :bombed => bomb?,
+      :flagged => flagged?,
+      :neighbors => neighbors,
+      :bomb_count => neighbor_bomb_count,
+      :explored => explored? }.inspect
+  end
+
+
+  def bomb?
+    @bomb
+  end
+
+  def flagged?
+    @flagged
+  end
+
+  def explored?
+    @explored
+  end
 
 end
