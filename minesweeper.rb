@@ -134,6 +134,9 @@ class Board
       end
     end
 
+    puts "Flagged tiles: #{self.flag_count}"
+    puts "Bomb tiles: #{self.board_bomb_count}"
+
     puts "    0    1    2    3    4    5    6    7    8"
     i = 0
     visual_display.each do |row|
@@ -179,6 +182,28 @@ class Board
 
     nil
   end
+
+  def flag_count
+    count = 0
+    self.grid.each do |row|
+      row.each do |tile|
+      count += 1 if tile.flagged
+      end
+    end
+    count
+  end
+
+  def board_bomb_count
+    count = 0
+    self.grid.each do |row|
+      row.each do |tile|
+      count += 1 if tile.bomb
+      end
+    end
+    count
+  end
+
+
 
 end
 
