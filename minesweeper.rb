@@ -33,6 +33,8 @@ class Game
     else
       puts "You win!"
     end
+
+    @game_board.display
   end
 
   def move(player_move)
@@ -124,13 +126,19 @@ class Board
         visual_display[idx1][idx2] = "_"  if current_tile.explored
         visual_display[idx1][idx2] = "f" if current_tile.flagged
         visual_display[idx1][idx2] = "*" if !current_tile.explored && !current_tile.flagged
-        visual_display[idx1][idx2] = current_tile.neighbor_bomb_count.to_s if current_tile.explored &&
-                                                                              current_tile.neighbor_bomb_count > 0
+        if current_tile.explored && current_tile.neighbor_bomb_count > 0 && current_tile.bomb
+          visual_display[idx1][idx2] = "B"
+        elsif current_tile.explored && current_tile.neighbor_bomb_count
+          visual_display[idx1][idx2] = current_tile.neighbor_bomb_count.to_s
+        end
       end
     end
 
+    puts "    0    1    2    3    4    5    6    7    8"
+    i = 0
     visual_display.each do |row|
-      p row
+      puts "#{i} #{row}"
+      i+=1
     end
 
     nil
@@ -239,4 +247,8 @@ class Tile
     @explored
   end
 
+end
+
+if __FILE__ == $PROGRAM_NAME
+  Game.new.play
 end
