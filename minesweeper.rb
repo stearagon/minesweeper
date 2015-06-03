@@ -134,8 +134,9 @@ class Board
       end
     end
 
-    puts "Flagged tiles: #{self.flag_count}"
     puts "Bomb tiles: #{self.board_bomb_count}"
+    puts "Flagged tiles: #{self.flag_count}"
+    puts "Remaining tiles to flag #{self.board_bomb_count - self.flag_count}"
 
     puts "    0    1    2    3    4    5    6    7    8"
     i = 0
