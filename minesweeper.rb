@@ -28,10 +28,10 @@ class Game
       self.move(input)
     end
 
-    if won?
-      puts "You win!"
+    if lose?
+      puts "You lose."
     else
-      puts "You lose"
+      puts "You win!"
     end
   end
 
@@ -44,7 +44,7 @@ class Game
   end
 
   def over?
-    won? || lose?
+    lose? || won?
   end
 
   def won?
@@ -93,7 +93,6 @@ class Board
   def reveal(pos)
     return self if self.grid[pos[0]][pos[1]].flagged
     return self if self.grid[pos[0]][pos[1]].explored
-    return self if self.grid[pos[0]][pos[1]].bomb
 
     current_tile = self.grid[pos[0]][pos[1]]
     current_tile.explored = true
