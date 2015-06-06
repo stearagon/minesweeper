@@ -28,13 +28,15 @@ class Game
       self.move(input)
     end
 
+    @game_board.display(:over)
+
     if lose?
       puts "You lose."
     else
       puts "You win!"
     end
 
-    @game_board.display
+
   end
 
   def move(player_move)
@@ -117,7 +119,7 @@ class Board
     end
   end
 
-  def display
+  def display(over = nil)
     visual_display = Array.new(grid.size) { |x| Array.new(grid.size) { |y| "*"}}
 
     visual_display.each_with_index do |row, idx1|
@@ -128,15 +130,20 @@ class Board
         visual_display[idx1][idx2] = "*" if !current_tile.explored && !current_tile.flagged
         if current_tile.explored && current_tile.neighbor_bomb_count > 0 && current_tile.bomb
           visual_display[idx1][idx2] = "B"
-        elsif current_tile.explored && current_tile.neighbor_bomb_count
+        elsif current_tile.explored && current_tile.neighbor_bomb_count > 0
           visual_display[idx1][idx2] = current_tile.neighbor_bomb_count.to_s
+        end
+        if over == :over
+          if current_tile.bomb
+            visual_display[idx1][idx2] = "B"
+          end
         end
       end
     end
 
     puts "Bomb tiles: #{self.board_bomb_count}"
     puts "Flagged tiles: #{self.flag_count}"
-    puts "Remaining tiles to flag #{self.board_bomb_count - self.flag_count}"
+    puts "Remaining tiles to flag: #{self.board_bomb_count - self.flag_count}"
 
     puts "    0    1    2    3    4    5    6    7    8"
     i = 0
